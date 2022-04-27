@@ -1,0 +1,31 @@
+pipeline{
+    agent any
+    stages{
+          stage('Checkout project') {
+        steps {
+            git branch: 'master',
+            credentialsId: 'git-cred',
+            url: 'https://github.com/nitinmuz/upgradassignment.git'
+        }
+      }
+    stage('docker build') {
+        steps {
+            script {
+              docker.withRegistry('https://931047759337.dkr.ecr.us-east-1.amazonaws.com', "ecr:us-east-1:ecr-cred") {
+              def customImage = docker.build("931047759337.dkr.ecr.us-east-1.amazonaws.com/node-app:latest", ".")
+              customImage.push()
+          }
+        }
+      }
+    }
+   stage('deploy to app host') {
+        steps {
+  sshagent(credentials: ['ssh-key']) {
+            sh '
+                ssh ubuntu@10.0.140.167
+            '
+          }
+      }
+    }
+}
+}
